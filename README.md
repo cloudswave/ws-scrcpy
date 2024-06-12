@@ -28,7 +28,7 @@ Make sure you have installed [node.js](https://nodejs.org/en/download/),
 [node-gyp](https://github.com/nodejs/node-gyp) and
 [build tools](https://github.com/nodejs/node-gyp#installation)
 ```shell
-git clone https://github.com/NetrisTV/ws-scrcpy.git
+git clone https://github.com/cloudwave/ws-scrcpy.git
 cd ws-scrcpy
 
 ## For stable version find latest tag and switch to it:
@@ -38,7 +38,17 @@ cd ws-scrcpy
 npm install
 npm start
 ```
+两种方式连接adb android设备
+1. 在服务器shell中执行`adb connect adb-device-ip:adb-device-port`
+2. 新增功能，打开`http://ws-scrcpy-host:8000/#!action=devtools&udid=adb-device-ip:adb-device-port`，然后刷新`http://ws-scrcpy-host:8000`查看设备是否连接上，首次连接可能需要重复几次
 
+## docker中运行
+```
+git clone https://github.com/cloudwave/ws-scrcpy.git
+cd ws-scrcpy
+sudo docker build -t ws-scrcpy .
+sudo docker run -p 8000:8000 --name=ws-scrcpy ws-scrcpy
+```
 ## Supported features
 
 ### Android

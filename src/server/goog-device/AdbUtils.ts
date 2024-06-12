@@ -35,6 +35,11 @@ export class AdbUtils {
         };
     }
 
+    public static async connect(host: string, port: number) {
+        const client = AdbExtended.createClient();
+        return client.connect(host, port);
+    }
+
     public static async push(serial: string, stream: ReadStream, pathString: string): Promise<PushTransfer> {
         const client = AdbExtended.createClient();
         const transfer = await client.push(serial, stream, pathString);
