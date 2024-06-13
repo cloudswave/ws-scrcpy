@@ -56,6 +56,17 @@ export WS_SCRCPY_CONFIG=/path/to/config.yaml
 ```
 当token为空时不进行token验证，否则进入首页查看设备列表必须携带token，如http://ws-scrcpy-host:8000/#!token=123456
 
+## 部分代码说明
+### app：前端
+前后端通过websocket进行通信
+- app/client/ManagerClient.ts 通过buildWebSocketUrl创建ws连接地址，openNewConnection建立连接
+- app/client/HostTracker.ts 通过onSocketMessage接收设备列表并遍历
+- app/applDevice/client/DeviceTracker.ts 设备信息渲染
+### server：后端
+- server/services/WebSocketServer.ts 通过attachToServer创建ws服务器，遍历mwFactories各模块通过processRequest传递请求
+- server/mw/WebsocketMultiplexer.ts 多路复用器，通过processChannel将数据传递给子模块
+- server/mw/HostTracker.ts 设备列表子模块，发送设备列表给app/client/HostTracker.ts进行渲染
+
 ## Supported features
 
 ### Android
