@@ -41,7 +41,10 @@ export class HostTracker extends ManagerClient<ParamsBase, HostTrackerEvents> {
     }
 
     protected onSocketClose(ev: CloseEvent): void {
-        console.log(TAG, 'WS closed');
+        console.log(TAG, 'WS closed', ev);
+        if (ev.code === 4006) {
+            document.body.innerHTML = `<h2>${ev.reason}</h2><p>Please provide a correct token, for example: http://${window.location.host}/#!token=123456</p> and you can modify the token in the configuration file`;
+        }
         this.emit('disconnected', ev);
     }
 

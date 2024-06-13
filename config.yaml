@@ -1,0 +1,18 @@
+# Run configuration example. See full config file spec in src/types/Configuration.d.ts
+
+# Token to access the server visit http://host/#!token=123456
+token: "123456"
+
+# Device trackers
+## track android devices (default: true, if was INCLUDE_GOOG enabled in build config)
+runGoogTracker: true
+## track iOS devices (default: true, if was INCLUDE_APPL enabled in build config)
+runApplTracker: false;
+
+# HTTP[s] servers configuration
+server:
+  - secure: false
+    port: 8000
+
+# Announce remote device trackers. The server doesn't check their availability.
+remoteHostList:

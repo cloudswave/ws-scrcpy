@@ -39,6 +39,7 @@ export class Config {
             announceApplTracker,
             server,
             remoteHostList: [],
+            token: '',
         };
         const merged = Object.assign({}, defaultConfig, userConfig);
         merged.server = merged.server.map((item) => this.parseServerItem(item));
@@ -93,6 +94,7 @@ export class Config {
                 }
             }
             const fullConfig = this.initConfig(userConfig);
+            console.log(fullConfig);
             this.instance = new Config(fullConfig);
         }
         return this.instance;
@@ -107,7 +109,7 @@ export class Config {
         return fs.readFileSync(absolutePath).toString();
     }
 
-    constructor(private fullConfig: Required<Configuration>) {}
+    constructor(private fullConfig: Required<Configuration>) { }
 
     public getHostList(): HostItem[] {
         if (!this.fullConfig.remoteHostList || !this.fullConfig.remoteHostList.length) {
@@ -152,5 +154,9 @@ export class Config {
 
     public get servers(): ServerItem[] {
         return this.fullConfig.server;
+    }
+
+    public get token() {
+        return this.fullConfig.token;
     }
 }

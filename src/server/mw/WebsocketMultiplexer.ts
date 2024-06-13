@@ -3,6 +3,7 @@ import { ACTION } from '../../common/Action';
 import { Multiplexer } from '../../packages/multiplexer/Multiplexer';
 import WS from 'ws';
 import Util from '../../app/Util';
+import { Config } from "../Config";
 
 export class WebsocketMultiplexer extends Mw {
     public static readonly TAG = 'WebsocketMultiplexer';
@@ -13,7 +14,14 @@ export class WebsocketMultiplexer extends Mw {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     public static processRequest(ws: WS, params: RequestParameters): WebsocketMultiplexer | undefined {
         const { action } = params;
+        const token = params.url.searchParams.get('token') || '';
+        console.log(`[${this.TAG}] Processing request token: `, token);
         if (action !== ACTION.MULTIPLEX) {
+            return;
+        }
+        // check the token
+        if (Config.getInstance().token !== '' && Config.getInstance().token !== token) {
+            ws.close(4006, `the token is wrong`);
             return;
         }
         return this.createMultiplexer(ws);

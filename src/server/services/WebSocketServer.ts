@@ -39,6 +39,7 @@ export class WebSocketServer implements Service {
             }
             const url = new URL(request.url, 'https://example.org/');
             const action = url.searchParams.get('action') || '';
+            console.log(`[${TAG}] ${request.url}`);
             let processed = false;
             for (const mwFactory of this.mwFactories.values()) {
                 const service = mwFactory.processRequest(ws, { action, request, url });

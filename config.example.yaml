@@ -1,5 +1,8 @@
 # Run configuration example. See full config file spec in src/types/Configuration.d.ts
 
+# Token to access the server, add example http://host/#!token=*** (default: "")
+token: ""
+
 # Device trackers
 ## track android devices (default: true, if was INCLUDE_GOOG enabled in build config)
 runGoogTracker: false

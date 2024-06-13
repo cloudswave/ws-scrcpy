@@ -83,12 +83,17 @@ export abstract class ManagerClient<P extends ParamsBase, TE extends EventMap> e
         if (this.params.useProxy && !this.supportMultiplexing()) {
             return this.wrapInProxy(directUrl);
         }
+        console.log('buildWebSocketUrl', directUrl);
         return directUrl;
     }
 
     protected buildDirectWebSocketUrl(): URL {
         const { hostname, port, secure, action } = this.params;
         const pathname = this.params.pathname ?? location.pathname;
+        const hash = location.hash.replace(/^#!/, '');
+        const parsedQuery = new URLSearchParams(hash);
+        const token = parsedQuery.get('token') || "";
+        console.log('buildDirectWebSocketUrl token:', token);
         let urlString: string;
         if (typeof hostname === 'string' && typeof port === 'number') {
             const protocol = secure ? 'wss:' : 'ws:';
@@ -107,6 +112,7 @@ export abstract class ManagerClient<P extends ParamsBase, TE extends EventMap> e
                 directUrl.searchParams.set('action', action);
             }
         }
+        directUrl.searchParams.set('token', token);
         return directUrl;
     }
 

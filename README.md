@@ -49,6 +49,13 @@ cd ws-scrcpy
 sudo docker build -t ws-scrcpy .
 sudo docker run -p 8000:8000 --name=ws-scrcpy ws-scrcpy
 ```
+## 端口和安全校验
+在config.yaml中修改端口和token，配置环境变量WS_SCRCPY_CONFIG
+```
+export WS_SCRCPY_CONFIG=/path/to/config.yaml
+```
+当token为空时不进行token验证，否则进入首页查看设备列表必须携带token，如http://ws-scrcpy-host:8000/#!token=123456
+
 ## Supported features
 
 ### Android
