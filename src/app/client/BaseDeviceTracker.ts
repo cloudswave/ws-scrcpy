@@ -88,6 +88,31 @@ export abstract class BaseDeviceTracker<DD extends BaseDeviceDescriptor, TE exte
         this.trackerName = `Unavailable. Host: ${params.hostname}, type: ${params.type}`;
         this.setBodyClass('list');
         this.setTitle();
+        this.buildConnectContainer();
+    }
+
+    public buildConnectContainer() {
+        const fragment = html`
+        <div style="margin:10px 20px;">
+            adb设备:<input type="text" id="ip-port" placeholder="127.0.0.1:5555">
+            <button id="connectBtn">连接</button>
+        </div>`.content;
+        document.body.appendChild(fragment);
+
+        const btn = document.getElementById('connectBtn');
+        if(btn) btn.onclick = ()=>{
+            const info = document.getElementById('ip-port') as HTMLInputElement;
+            if(!info || info.value == "") return;
+            const protocol = location.protocol;
+            const hostname = location.hostname;
+            const port = location.port;
+            const pathname = location.pathname;
+            const hash = `#!${new URLSearchParams({
+                action: "devtools",
+                udid: info.value
+            }).toString()}`;
+            window.open(`${protocol}//${hostname}:${port}${pathname}${hash}`, "_blank");
+        };
     }
 
     public static parseParameters(params: URLSearchParams): ParamsDeviceTracker {

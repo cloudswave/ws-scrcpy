@@ -22,29 +22,45 @@ export class RemoteDevtools extends Mw {
             return;
         }
         console.log(`[${this.TAG}] host: ${host}, udid: ${udid}`);
-        const udidArr = udid.split(':'); // https://example.com/#!action=devtools&udid=39.98.69.33:5556
-        if (udidArr.length == 2) {
-            const [ip, port] = udidArr;
-            AdbUtils.connect(ip, parseInt(port)).then((info) => {
-                console.log(`[${this.TAG}] connect: ${info}`);
-            }).catch((err) => {
-                console.error(err);
-                ws.send(
-                    JSON.stringify({
-                        type: ACTION.DEVTOOLS,
-                        data: {
-                            deviceName: "adb连接失败",
-                            deviceSerial: udid,
-                            browsers: []
-                        },
-                    }),
-                );
-            }); // 主动连接一次
-        }
         return new RemoteDevtools(ws, host, udid);
     }
     constructor(protected ws: WS, private readonly host: string, private readonly udid: string) {
         super(ws);
+        this.adbConnect();
+    }
+    protected async adbConnect() {
+        const udidArr = this.udid.split(':');
+        if (udidArr.length == 2) {
+            const [ip, port] = udidArr;
+            return AdbUtils.connect(ip, parseInt(port)).then((info) => {
+                console.log(`[${RemoteDevtools.TAG}] connect: ${info}`);
+                this.ws.send(
+                    JSON.stringify({
+                        type: ACTION.DEVTOOLS,
+                        data: {
+                            deviceName: "adb连接成功",
+                            deviceSerial: this.udid,
+                            browsers: []
+                        },
+                    }),
+                );
+                return true;
+            }).catch((err) => {
+                console.error(err);
+                this.ws.send(
+                    JSON.stringify({
+                        type: ACTION.DEVTOOLS,
+                        data: {
+                            deviceName: "adb连接失败",
+                            deviceSerial: this.udid,
+                            browsers: []
+                        },
+                    }),
+                );
+                return false;
+            }); // 主动连接一次
+        }
+        return false;
     }
     protected onSocketMessage(event: WS.MessageEvent): void {
         let data;

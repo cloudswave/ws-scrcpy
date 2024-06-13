@@ -178,6 +178,11 @@ export class DeviceTracker extends BaseDeviceTracker<GoogDeviceDescriptor, never
         const isActive = device.state === DeviceState.DEVICE;
         let hasPid = false;
         const servicesId = `device_services_${fullName}`;
+        const a = DeviceTracker.buildLink({
+            action: "devtools",
+            udid: device.udid
+        }, "重连", this.params);
+        a.style.color = "white";
         const row = html`<div class="device ${isActive ? 'active' : 'not-active'}">
             <div class="device-header">
                 <div class="device-name">${device['ro.product.manufacturer']} ${device['ro.product.model']}</div>
@@ -190,6 +195,7 @@ export class DeviceTracker extends BaseDeviceTracker<GoogDeviceDescriptor, never
             </div>
             <div id="${servicesId}" class="services"></div>
         </div>`.content;
+        if (!isActive) row.children[0].children[0].appendChild(a);
         const services = row.getElementById(servicesId);
         if (!services) {
             return;
