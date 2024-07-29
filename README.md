@@ -43,12 +43,35 @@ npm start
 2. 新增功能，打开`http://ws-scrcpy-host:8000/#!action=devtools&udid=adb-device-ip:adb-device-port`，然后刷新`http://ws-scrcpy-host:8000`查看设备是否连接上，首次连接可能需要重复几次
 
 ## docker中运行
+阿里云镜像：
+```
+sudo docker run --name ws-scrcpy -d --net=host  registry.cn-beijing.aliyuncs.com/ethanzhu/ws-scrcpy
+```
+官方镜像：
+```
+sudo docker run --name ws-scrcpy -d --net=host  ethanzhu/ws-scrcpy
+```
+使用--net=host可以自动识别宿主机器连接的安卓设备，也可使用端口映射如：`-p 8000:8000`，但需要容器内执行adb connect命令，如
+```
+sudo docker exec ws-scrcpy adb connect 安卓IP地址:5555
+```
+
+手动构建docker镜像：
 ```
 git clone https://github.com/cloudwave/ws-scrcpy.git
 cd ws-scrcpy
 sudo docker build -t ws-scrcpy .
+# 使用--net=host
+sudo docker run --name ws-scrcpy -d --net=host ws-scrcpy
+# 或端口映射
 sudo docker run -p 8000:8000 --name=ws-scrcpy ws-scrcpy
+sudo docker exec ws-scrcpy adb connect 安卓IP地址:5555 # 需要手动连接
 ```
+Action自动构建docker镜像：
+- [Action配置文件](https://github.com/cloudswave/ws-scrcpy/blob/master/.github/workflows/docker-image.yaml)
+- 触发条件：路径触发（src路径下面的代码有变动或Dockerfile有变动时触发自动构建）或者创建以v开头的tag时触发
+- [触发历史](https://github.com/cloudswave/ws-scrcpy/actions/workflows/docker-image.yaml)
+
 ## 端口和安全校验
 在config.yaml中修改端口和token，配置环境变量WS_SCRCPY_CONFIG
 ```
