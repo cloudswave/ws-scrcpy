@@ -211,13 +211,13 @@ export abstract class BasePlayer extends TypedEmitter<PlayerEvents> {
         displayInfo?: DisplayInfo,
     ): boolean {
         if (!window.localStorage) {
-            return false;
+            return true;
         }
-        let parsedValue = false;
+        let parsedValue = true;
         const key = `${this.getFullStorageKey(storageKeyPrefix, udid, displayInfo)}:fit`;
         const saved = window.localStorage.getItem(key);
         if (!saved) {
-            return false;
+            return true;
         }
         try {
             parsedValue = JSON.parse(saved);
