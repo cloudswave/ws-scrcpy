@@ -75,7 +75,7 @@ export class FileListingClient extends ManagerClient<ParamsFileListing, never> i
                     udid: descriptor.udid,
                     path: `${tempPath}/`,
                 },
-                'list files',
+                '文件列表',
                 params,
             ),
         );

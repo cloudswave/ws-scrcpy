@@ -368,7 +368,7 @@ export class DevtoolsClient extends ManagerClient<ParamsDevtools, never> {
                     action: ACTION.DEVTOOLS,
                     udid: descriptor.udid,
                 },
-                'devtools',
+                '开发工具',
                 params,
             ),
         );
