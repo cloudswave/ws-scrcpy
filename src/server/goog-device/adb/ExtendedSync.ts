@@ -40,6 +40,41 @@ export class ExtendedSync {
         return this._readData(stream);
     }
 
+    public async read(path: string): Promise<Buffer> {
+        return new Promise(async (resolve, reject) => {
+            const chunks: Buffer[] = [];
+            this._sendCommandWithArg(Protocol.RECV, `${path}`);
+            
+            const readNext = async (): Promise<void> => {
+                const reply = await this.parser.readAscii(4);
+                switch (reply) {
+                    case Protocol.DATA:
+                        const lengthData = await this.parser.readBytes(4);
+                        const length = lengthData.readUInt32LE(0);
+                        const data = await this.parser.readBytes(length);
+                        chunks.push(data);
+                        return readNext();
+                    case Protocol.DONE:
+                        resolve(Buffer.concat(chunks));
+                        return;
+                    case Protocol.FAIL:
+                        const errLen = await this.parser.readBytes(4);
+                        const errMsg = await this.parser.readAscii(errLen.readUInt32LE(0));
+                        reject(new Error(errMsg));
+                        return;
+                    default:
+                        return this.parser.unexpected(reply, 'DATA, DONE or FAIL');
+                }
+            };
+            
+            try {
+                await readNext();
+            } catch (e) {
+                reject(e);
+            }
+        });
+    }
+
     public async pipeStat(path: string, stream: Multiplexer): Promise<void> {
         this._sendCommandWithArg(Protocol.STAT, `${path}`);
         const reply = await this.parser.readAscii(4);

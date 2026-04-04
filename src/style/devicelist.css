@@ -22,7 +22,6 @@ body.list {
 }
 
 #devices {
-    padding: 20px 0;
     width: 100%;
     height: calc(100% - 40px);
     overflow-y: auto;
@@ -113,7 +112,8 @@ body.list #device_list_menu {
     position: relative;
     bottom: 0;
     left: 0;
-    width: 100%;
+    width: auto !important;
+    max-width: none !important;
 }
 
 #devices .device-list {
@@ -232,4 +232,133 @@ body.list #device_list_menu {
     padding: 5px 20px 5px;
     font-size: larger;
     font-weight: bolder;
+}
+
+/* 宫格视图样式 - 使用 flex 强制横向排列 */
+/* tracker 容器横向布局 */
+.grid-view #tracker_instance1 {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    flex-direction: row !important;
+    width: auto !important;
+    max-width: none !important;
+}
+
+/* tracker 容器内第一个子元素（标题）横向撑满 */
+.grid-view #tracker_instance1 > div:first-child {
+    width: 100% !important;
+    flex-basis: 100% !important;
+}
+
+#devices .device-list.grid-view div.device {
+    width: 140px !important;
+    height: 280px !important;
+    border-radius: 10px !important;
+    padding: 12px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    aspect-ratio: 9 / 16 !important;
+    max-height: 320px !important;
+    flex-shrink: 1 !important;
+    background-color: #f5f5f5 !important;
+}
+
+#devices .device-list.grid-view div.device:hover {
+    transform: scale(1.02);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+/* 列表视图样式 */
+#devices .device-list.list-view {
+    display: block !important;
+    padding: 0 !important;
+}
+
+
+/* 宫格卡片样式 */
+#devices .device-list.grid-view .device.grid-card {
+    width: 140px !important;
+    height: 280px !important;
+    border-radius: 10px !important;
+    padding: 12px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    aspect-ratio: 9 / 16 !important;
+    max-height: 320px !important;
+    flex-shrink: 0 !important;
+    background-color: #f5f5f5 !important;
+    border: 1px solid #ddd !important;
+    margin: 2px !important;
+}
+
+#devices .device-list.grid-view .device.grid-card:hover {
+    transform: scale(1.02);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+/* 设备缩略图预览背景 */
+.device-thumbnail {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    background-size: cover !important;
+    background-position: center !important;
+    opacity: 0.3 !important;
+    z-index: 0 !important;
+  pointer-events: none !important;
+}
+#devices .device-header {
+    position: relative !important;
+    z-index: 1 !important;
+}
+
+/* 宫格视图：更多按钮 */
+#devices .device-list.grid-view .device .more-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    z-index: 10;
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 50%;
+    background-color: rgba(0, 0, 0, 0.3);
+    color: white;
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#devices .device-list.grid-view .device .more-btn:hover {
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+/* 隐藏/显示样式 */
+#devices .device .device-serial.hidden,
+#devices .device .device-version.hidden,
+#devices .device .services.hidden {
+    display: none !important;
+}
+
+/* 更多菜单展开 */
+#devices .device .services.show {
+    display: block !important;
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    right: 10px;
+    background-color: rgba(255, 255, 255, 0.95);
+    border-radius: 8px;
+    padding: 10px;
+    z-index: 5;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+#devices .device .services.show .desc-block {
+    display: block !important;
+    margin: 5px 0;
 }

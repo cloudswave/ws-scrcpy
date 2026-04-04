@@ -1,5 +1,6 @@
 import Adb from '@dead50f7/adbkit/lib/adb';
 import { ExtendedClient } from './ExtendedClient';
+import { ExtendedSync } from './ExtendedSync';
 import { ClientOptions } from '@dead50f7/adbkit/lib/ClientOptions';
 
 interface Options {
@@ -24,5 +25,12 @@ export class AdbExtended extends Adb {
             }
         }
         return new ExtendedClient(opts);
+    }
+
+    static async sync(serial: string): Promise<ExtendedSync> {
+        const client = AdbExtended.createClient();
+        const transport = await client.transport(serial);
+        const { SyncCommand } = await import('./command/host-transport/sync');
+        return new SyncCommand(transport).execute();
     }
 }

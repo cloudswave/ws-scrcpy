@@ -66,6 +66,10 @@ a:visited {
 body {
     color: var(--text-color);
     background-color: var(--main-bg-color);
+    
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
     position: absolute;
     margin: 0;
     height: 100%;

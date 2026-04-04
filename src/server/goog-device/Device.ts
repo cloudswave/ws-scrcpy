@@ -462,4 +462,34 @@ export class Device extends TypedEmitter<DeviceEvents> {
             throw error;
         }
     }
+
+    public async getScreenshot(): Promise<Buffer | undefined> {
+        if (!this.connected) {
+            return;
+        }
+        try {
+            // 执行截图命令并获取 PNG 数据
+            const tempPath = '/sdcard/screenshot.png';
+            await this.runShellCommandAdbKit(`screencap -p ${tempPath}`);
+            const result = await this.pullFile(tempPath);
+            // 删除临时文件
+            await this.runShellCommandAdbKit(`rm -f ${tempPath}`);
+            return result;
+        } catch (error) {
+            console.error(this.TAG, `Screenshot error: ${error}`);
+            return;
+        }
+    }
+
+    private async pullFile(path: string): Promise<Buffer | undefined> {
+        const sync = await AdbExtended.sync(this.udid);
+        try {
+            const content = await sync.read(path);
+            return content;
+        } catch {
+            return;
+        } finally {
+            sync.end();
+        }
+    }
 }

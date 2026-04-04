@@ -139,7 +139,7 @@ export abstract class BaseDeviceTracker<DD extends BaseDeviceDescriptor, TE exte
         });
     }
 
-    private setNameValue(parent: Element | null, name: string): void {
+    private setNameValue(parent: Element | null, _name: string): void {
         if (!parent) {
             return;
         }
@@ -150,9 +150,200 @@ export abstract class BaseDeviceTracker<DD extends BaseDeviceDescriptor, TE exte
             nameEl.id = nameBlockId;
             nameEl.className = 'tracker-name';
         }
-        nameEl.innerText = name;
+        
+        const titleText = '设备列表';
+        nameEl.innerText = titleText;
+        
+        // 添加视图切换按钮
+        if (!document.getElementById('view-toggle-' + this.elementId)) {
+            const viewToggle = document.createElement('div');
+            viewToggle.id = 'view-toggle-' + this.elementId;
+            viewToggle.className = 'view-toggle';
+            viewToggle.style.display = 'inline-flex';
+            viewToggle.style.verticalAlign = 'middle';
+            
+            const viewMode = localStorage.getItem("deviceViewMode") || "list";
+            
+            const gridBtn = document.createElement('button');
+            gridBtn.id = 'gridViewBtn-' + this.elementId;
+            gridBtn.innerHTML = '▦';
+            gridBtn.title = '宫格视图';
+            gridBtn.className = viewMode === 'grid' ? 'active' : '';
+            gridBtn.onclick = () => this.setViewMode('grid', this.elementId);
+            
+            const listBtn = document.createElement('button');
+            listBtn.id = 'listViewBtn-' + this.elementId;
+            listBtn.innerHTML = '☰';
+            listBtn.title = '列表视图';
+            listBtn.className = viewMode === 'list' ? 'active' : '';
+            listBtn.onclick = () => this.setViewMode('list', this.elementId);
+            
+            viewToggle.appendChild(gridBtn);
+            viewToggle.appendChild(listBtn);
+            nameEl.appendChild(viewToggle);
+            
+            // 初始化视图
+            setTimeout(() => this.setViewMode(viewMode, this.elementId), 100);
+        }
+        
         parent.insertBefore(nameEl, parent.firstChild);
     }
+    
+    private setViewMode(mode: string, elementId: string): void {
+        localStorage.setItem("deviceViewMode", mode);
+        
+        // 添加 class 到容器
+        const deviceList = document.querySelector(`#devices .device-list`);
+        if (deviceList) {
+            deviceList.classList.remove("grid-view", "list-view");
+            deviceList.classList.add(mode + "-view");
+        }
+        
+        // 更新每个 device 元素
+        const devices = document.querySelectorAll(`#devices .device`);
+        devices.forEach((device) => {
+            const d = device as HTMLElement;
+            if (mode === 'grid') {
+                d.classList.add("grid-card");
+        // 加载缩略图
+        const udid = d.querySelector('.device-serial')?.textContent;
+        if (udid) {
+          this.loadThumbnail(d, udid);
+
+            // 添加更多按钮到右上角
+            const existingMoreBtn = d.querySelector('.more-btn');
+            if (!existingMoreBtn) {
+              const moreBtn = document.createElement('button');
+              moreBtn.className = 'more-btn';
+              moreBtn.innerHTML = '⋮';
+              moreBtn.title = '更多';
+              moreBtn.onclick = (e) => {
+                e.stopPropagation();
+                const services = d.querySelector('.services');
+                if (services) {
+                  services.classList.toggle('show');
+                }
+              };
+              d.appendChild(moreBtn);
+            }
+
+            // 只显示 device-serial、device-name 和状态圆点，隐藏其余
+            const deviceHeader = d.querySelector('.device-header');
+            if (deviceHeader) {
+              // 隐藏 device-version
+              const deviceVersion = deviceHeader.querySelector('.device-version');
+              if (deviceVersion) {
+                deviceVersion.classList.add('hidden');
+              }
+              // 隐藏设备名称（已改为显示 udid）
+              const deviceName = deviceHeader.querySelector('.device-name');
+              if (deviceName) {
+                deviceName.classList.add('hidden');
+              }
+              // 隐藏状态文字
+              const deviceState = deviceHeader.querySelector('.device-state');
+              if (deviceState) {
+                deviceState.classList.add('grid-state');
+              }
+              // 隐藏链接
+              const links = d.querySelectorAll('a');
+              links.forEach(link => link.classList.add('hidden'));
+            }
+            // 隐藏 services 容器
+            const services = d.querySelector('.services');
+            if (services) {
+              services.classList.add('hidden');
+            }
+            // 点击卡片跳转到远程控制页面
+            d.style.cursor = 'pointer';
+            d.onclick = (e) => {
+              // 如果点击的是更多按钮或服务菜单，不跳转
+              if ((e.target as HTMLElement).closest('.more-btn') || (e.target as HTMLElement).closest('.services')) {
+                return;
+              }
+              const udidEl = d.querySelector('.device-serial');
+              if (udidEl && udidEl.textContent) {
+                const udid = udidEl.textContent;
+                const hostname = window.location.hostname;
+                const port = window.location.port;
+                const protocol = window.location.protocol;
+                const pathname = window.location.pathname;
+                const wsUrl = `ws://${hostname}:${port}/?action=proxy-adb&remote=tcp:8886&udid=${encodeURIComponent(udid)}`;
+                const params = new URLSearchParams();
+                params.set('action', 'stream');
+                params.set('udid', udid);
+                params.set('player', 'broadway');
+                params.set('ws', wsUrl);
+                const hash = `#!${params.toString()}`;
+                window.open(`${protocol}//${hostname}:${port}${pathname}${hash}`, '_blank');
+              }
+            };
+        }
+            } else {
+                d.classList.remove("grid-card");
+            // 移除更多按钮
+            const moreBtn = d.querySelector('.more-btn');
+            if (moreBtn) {
+              moreBtn.remove();
+            }
+            // 恢复显示隐藏的元素
+            const deviceHeader = d.querySelector('.device-header');
+            if (deviceHeader) {
+              const deviceVersion = deviceHeader.querySelector('.device-version');
+              if (deviceVersion) {
+                deviceVersion.classList.remove('hidden');
+              }
+              const deviceName = deviceHeader.querySelector('.device-name');
+              if (deviceName) {
+                deviceName.classList.remove('hidden');
+              }
+              const deviceState = deviceHeader.querySelector('.device-state');
+              if (deviceState) {
+                deviceState.classList.remove('grid-state');
+              }
+              const links = d.querySelectorAll('a');
+              links.forEach(link => link.classList.remove('hidden'));
+            }
+            const services = d.querySelector('.services');
+            if (services) {
+              services.classList.remove('hidden');
+            }
+            // 移除点击跳转事件
+            d.onclick = null;
+            d.style.cursor = '';
+            // 切换到列表模式时移除预览图
+            const thumbnail = d.querySelector('.device-thumbnail');
+            if (thumbnail) {
+                thumbnail.remove();
+            }
+            }
+        });
+        
+        // 更新按钮状态
+        const gridBtn = document.getElementById('gridViewBtn-' + elementId);
+        const listBtn = document.getElementById('listViewBtn-' + elementId);
+        if (gridBtn) gridBtn.classList.toggle("active", mode === "grid");
+        if (listBtn) listBtn.classList.toggle("active", mode === "list");
+    }
+
+    
+    
+    private loadThumbnail(deviceEl: Element, udid: string): void {
+        // 检查是否已有缩略图
+        const existing = deviceEl.querySelector('.device-thumbnail');
+        if (existing) return;
+
+        // 直接给卡片设置 position: relative，不依赖 .device-header
+        (deviceEl as HTMLElement).style.position = 'relative';
+        (deviceEl as HTMLElement).style.overflow = 'hidden';
+
+        const thumbnail = document.createElement("div");
+        thumbnail.className = "device-thumbnail";
+        thumbnail.style.backgroundImage = `url(/thumbnail/${encodeURIComponent(udid)})`;
+
+        deviceEl.insertBefore(thumbnail, deviceEl.firstChild);
+    }
+
 
     private getOrCreateTrackerBlock(parent: Element, controlCenterName: string): Element {
         let el = document.getElementById(this.elementId);
@@ -226,7 +417,7 @@ export abstract class BaseDeviceTracker<DD extends BaseDeviceDescriptor, TE exte
         if (!devices) {
             devices = document.createElement('div');
             devices.id = id;
-            devices.className = 'table-wrapper';
+            devices.className = 'table-wrapper device-list';
             document.body.appendChild(devices);
         }
         return devices;

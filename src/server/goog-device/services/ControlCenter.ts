@@ -11,6 +11,7 @@ import { ControlCenterCommand } from '../../../common/ControlCenterCommand';
 import * as os from 'os';
 import * as crypto from 'crypto';
 import { DeviceState } from '../../../common/DeviceState';
+import sharp from 'sharp';
 
 export class ControlCenter extends BaseControlCenter<GoogDeviceDescriptor> implements Service {
     private static readonly defaultWaitAfterError = 1000;
@@ -135,6 +136,30 @@ export class ControlCenter extends BaseControlCenter<GoogDeviceDescriptor> imple
 
     public getDevice(udid: string): Device | undefined {
         return this.deviceMap.get(udid);
+    }
+
+    public async getDeviceScreenshot(udid: string): Promise<Buffer | undefined> {
+        const device = this.deviceMap.get(udid);
+        if (!device) {
+            return;
+        }
+        const screenshot = await device.getScreenshot();
+        if (!screenshot) {
+            return;
+        }
+        // 压缩图片：缩放到宽度 140px，保持宽高比，JPEG 质量 60
+        try {
+            const compressed = await sharp(screenshot)
+                .resize(140, null, { fit: 'inside', withoutEnlargement: true })
+                .jpeg({ quality: 60 })
+                .toBuffer();
+            console.log(`Thumbnail compress: original ${screenshot.length} bytes -> compressed ${compressed.length} bytes`);
+            return compressed;
+        } catch (error) {
+            console.error('Thumbnail compress error:', error);
+            // 压缩失败返回原图
+            return screenshot;
+        }
     }
 
     public getId(): string {

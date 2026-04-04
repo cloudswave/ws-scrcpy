@@ -84,6 +84,26 @@ export class HttpServer extends TypedEmitter<HttpServerEvents> implements Servic
             const { MjpegProxyFactory } = await import('../mw/MjpegProxyFactory');
             this.mainApp.get('/mjpeg/:udid', new MjpegProxyFactory().proxyRequest);
             /// #endif
+            // 设备截图 API
+            const thumbnailHandler = async (req: any, res: any) => {
+                const { udid } = req.params;
+                try {
+                    const { ControlCenter } = await import('../goog-device/services/ControlCenter');
+                    const cc = ControlCenter.getInstance();
+                    const screenshot = await cc.getDeviceScreenshot(udid);
+                    if (!screenshot) {
+                        res.status(404).send('Device not found or screenshot failed');
+                        return;
+                    }
+                    res.set('Content-Type', 'image/png');
+                    res.send(screenshot);
+                } catch (error) {
+                    console.error('Thumbnail error:', error);
+                    res.status(500).send('Internal error');
+                }
+            };
+            this.mainApp.get('/thumbnail/:udid', thumbnailHandler);
+            this.mainApp.get(PATHNAME + '/thumbnail/:udid', thumbnailHandler);
         }
         const config = Config.getInstance();
         config.servers.forEach((serverItem) => {
