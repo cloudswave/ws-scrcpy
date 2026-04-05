@@ -2,15 +2,17 @@ name: Build and Push Multi-Arch Docker Images
 
 # 触发条件：路径触发（src路径下面的代码有变动或Dockerfile有变动时触发自动构建）或者创建以 v 开头的 tag 时触发
 on:
-  push:
-    paths:
-      - 'src/**'
-      - 'Dockerfile'
+  # push:
+  #   paths:
+  #     - 'src/**'
+  #     - 'Dockerfile'
   pull_request:
     branches:
       - master
   release:
     types: [published]
+  # 开启手动触发按钮
+  workflow_dispatch:
 
 jobs:
   build-and-push-docker-image:
@@ -45,7 +47,7 @@ jobs:
           type=ref,event=branch
           type=sha,enable=true
           type=semver,pattern={{version}}
-          latest
+          type=raw,value=latest,enable={{is_tag}}
 
     - name: Build and push Docker image
       uses: docker/build-push-action@v2
