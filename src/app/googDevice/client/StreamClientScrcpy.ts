@@ -30,6 +30,7 @@ import { ACTION } from '../../../common/Action';
 import { StreamReceiverScrcpy } from './StreamReceiverScrcpy';
 import { ParamsDeviceTracker } from '../../../types/ParamsDeviceTracker';
 import { ScrcpyFilePushStream } from '../filePush/ScrcpyFilePushStream';
+import SvgImage from '../../ui/SvgImage';
 
 type StartParams = {
     udid: string;
@@ -59,6 +60,12 @@ export class StreamClientScrcpy
     private player?: BasePlayer;
     private filePushHandler?: FilePushHandler;
     private fitToScreen?: boolean;
+    private savedFitToScreen?: boolean;
+    private savedVideoSettings?: VideoSettings;
+    private isFullscreen = false;
+    private floatingBtn?: HTMLElement;
+    private savedVideoContainerStyle?: { width: string; height: string };
+
     private readonly streamReceiver: StreamReceiverScrcpy;
 
     public static registerPlayer(playerClass: PlayerClass): void {
@@ -381,6 +388,10 @@ export class StreamClientScrcpy
     }
 
     public getMaxSize(): Size | undefined {
+        // 全屏时限制宽度 800px，高度给一个很大的值基本不限制
+        if (this.isFullscreen) {
+            return new Size(800, 9999);
+        }
         if (!this.controlButtons) {
             return;
         }
@@ -388,6 +399,202 @@ export class StreamClientScrcpy
         const width = (body.clientWidth - this.controlButtons.clientWidth) & ~15;
         const height = body.clientHeight & ~15;
         return new Size(width, height);
+    }
+
+    public toggleFullscreen(): void {
+        if (!this.controlButtons) {
+            return;
+        }
+        this.isFullscreen = !this.isFullscreen;
+        if (this.isFullscreen) {
+            this.enterFullscreen();
+        } else {
+            this.exitFullscreen();
+        }
+    }
+
+    private enterFullscreen(): void {
+        if (!this.controlButtons || !this.player) {
+            return;
+        }
+
+        const deviceView = this.controlButtons.closest('.device-view');
+        if (!deviceView) {
+            return;
+        }
+
+        // 清除 .video 子容器的行内尺寸（JS 设的固定 px 会阻止 CSS 全屏铺满）
+        const videoEl = deviceView.querySelector('.video');
+        if (videoEl) {
+            for (let i = 0; i < videoEl.children.length; i++) {
+                const child = videoEl.children[i] as HTMLElement;
+                if (child.style.width || child.style.height) {
+                    this.savedVideoContainerStyle = {
+                        width: child.style.width,
+                        height: child.style.height,
+                    };
+                    child.style.width = '';
+                    child.style.height = '';
+                    break;
+                }
+            }
+        }
+
+        // 全屏 class
+        deviceView.classList.add('fullscreen');
+
+        // 控制栏改为 overlay 模式（默认隐藏，悬浮按钮可 toggle）
+        this.controlButtons.style.position = 'fixed';
+        this.controlButtons.style.top = '0';
+        this.controlButtons.style.right = '0';
+        this.controlButtons.style.zIndex = '10001';
+        this.controlButtons.style.display = 'none';
+
+        // 更新全屏按钮图标为退出全屏
+        GoogToolBox.updateFullscreenButton(this.controlButtons, true);
+
+        // 保存当前 fitToScreen 和 videoSettings，退出全屏时恢复
+        this.savedFitToScreen = this.fitToScreen;
+        this.savedVideoSettings = VideoSettings.copy(this.player.getVideoSettings());
+
+        // 固定 800px 分辨率，不随窗口变化
+        this.fitToScreen = true;
+        const newBounds = this.getMaxSize();
+        if (newBounds && this.player) {
+            const currentSettings = this.player.getVideoSettings();
+            const newSettings = StreamClientScrcpy.createVideoSettingsWithBounds(currentSettings, newBounds);
+            this.player.setVideoSettings(newSettings, true, false);
+            this.sendNewVideoSetting(newSettings);
+        }
+
+        // 创建悬浮按钮（右上角，toggle 控制栏显示）
+        this.createFloatingButton();
+    }
+
+    private exitFullscreen(): void {
+        if (!this.controlButtons || !this.player) {
+            return;
+        }
+
+        const deviceView = this.controlButtons.closest('.device-view');
+        if (deviceView) {
+            deviceView.classList.remove('fullscreen');
+        }
+
+        // 恢复控制栏样式
+        this.controlButtons.style.position = '';
+        this.controlButtons.style.top = '';
+        this.controlButtons.style.right = '';
+        this.controlButtons.style.zIndex = '';
+        this.controlButtons.style.display = '';
+
+        // 恢复全屏按钮图标
+        GoogToolBox.updateFullscreenButton(this.controlButtons, false);
+
+        // 恢复 fitToScreen 和 VideoSettings
+        this.fitToScreen = this.savedFitToScreen;
+        if (this.savedVideoSettings && this.player) {
+            this.player.setVideoSettings(this.savedVideoSettings, false, false);
+            this.sendNewVideoSetting(this.savedVideoSettings);
+        }
+        this.savedFitToScreen = undefined;
+        this.savedVideoSettings = undefined;
+
+        // 恢复 .video 子容器行内尺寸
+        if (this.savedVideoContainerStyle && deviceView) {
+            const videoEl = deviceView.querySelector('.video');
+            if (videoEl && videoEl.children.length > 0) {
+                const child = videoEl.children[0] as HTMLElement;
+                child.style.width = this.savedVideoContainerStyle.width;
+                child.style.height = this.savedVideoContainerStyle.height;
+            }
+        }
+        this.savedVideoContainerStyle = undefined;
+
+        // 移除悬浮按钮
+        this.removeFloatingButton();
+    }
+
+    private createFloatingButton(): void {
+        if (this.floatingBtn) {
+            return;
+        }
+        const btn = document.createElement('button');
+        btn.className = 'floating-control-btn';
+        btn.title = '控制栏';
+        const svg = SvgImage.create(SvgImage.Icon.MENU);
+        btn.appendChild(svg);
+        // 拖拽支持 — 通过 click 事件触发 toggle，pointer 事件只做拖拽
+        let isDragging = false;
+        let startX = 0;
+        let startY = 0;
+        let origX = 0;
+        let origY = 0;
+
+        const onPointerDown = (e: PointerEvent) => {
+            isDragging = false;
+            startX = e.clientX;
+            startY = e.clientY;
+            const rect = btn.getBoundingClientRect();
+            origX = rect.left;
+            origY = rect.top;
+            btn.setPointerCapture(e.pointerId);
+        };
+
+        const onPointerMove = (e: PointerEvent) => {
+            const dx = e.clientX - startX;
+            const dy = e.clientY - startY;
+            if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
+                isDragging = true;
+            }
+            if (isDragging) {
+                btn.style.left = `${origX + dx}px`;
+                btn.style.top = `${origY + dy}px`;
+                btn.style.right = 'auto';
+            }
+        };
+
+        const onPointerUp = () => {
+            // 拖拽后阻止 click 事件冒泡
+            if (isDragging) {
+                btn.dataset.dragged = 'true';
+            }
+        };
+
+        btn.addEventListener('pointerdown', onPointerDown);
+        btn.addEventListener('pointermove', onPointerMove);
+        btn.addEventListener('pointerup', onPointerUp);
+
+        // 用原生 click 事件，拖拽时跳过
+        btn.addEventListener('click', () => {
+            if (btn.dataset.dragged === 'true') {
+                btn.dataset.dragged = '';
+                return;
+            }
+            this.toggleControlBar();
+        });
+
+        document.body.appendChild(btn);
+        this.floatingBtn = btn;
+    }
+
+    private removeFloatingButton(): void {
+        if (this.floatingBtn && this.floatingBtn.parentElement) {
+            this.floatingBtn.parentElement.removeChild(this.floatingBtn);
+        }
+        this.floatingBtn = undefined;
+    }
+
+    private toggleControlBar(): void {
+        if (!this.controlButtons) {
+            return;
+        }
+        // toggle 控制栏显示/隐藏（overlay 模式）
+        if (this.controlButtons.style.display === 'none' || !this.controlButtons.style.display) {
+            this.controlButtons.style.display = 'block';
+        } else {
+            this.controlButtons.style.display = 'none';
+        }
     }
 
     private setTouchListeners(player: BasePlayer): void {

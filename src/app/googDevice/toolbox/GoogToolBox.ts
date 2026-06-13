@@ -103,6 +103,31 @@ export class GoogToolBox extends ToolBox {
             });
             elements.unshift(more);
         }
+
+        // 全屏按钮
+        const fullscreenBtn = new ToolBoxButton('全屏', SvgImage.Icon.FULLSCREEN);
+        fullscreenBtn.addEventListener('click', () => {
+            client.toggleFullscreen();
+        });
+        elements.push(fullscreenBtn);
+
         return new GoogToolBox(elements);
+    }
+
+    /** 更新全屏按钮图标（全屏/退出全屏切换） */
+    public static updateFullscreenButton(toolboxEl: HTMLElement, isFullscreen: boolean): void {
+        const buttons = toolboxEl.querySelectorAll('.control-button');
+        const lastBtn = buttons[buttons.length - 1] as HTMLElement | undefined;
+        if (!lastBtn) {
+            return;
+        }
+        lastBtn.innerHTML = '';
+        if (isFullscreen) {
+            lastBtn.title = '退出全屏';
+            lastBtn.appendChild(SvgImage.create(SvgImage.Icon.FULLSCREEN_EXIT));
+        } else {
+            lastBtn.title = '全屏';
+            lastBtn.appendChild(SvgImage.create(SvgImage.Icon.FULLSCREEN));
+        }
     }
 }

@@ -386,8 +386,12 @@ export abstract class BasePlayer extends TypedEmitter<PlayerEvents> {
         this.touchableCanvas.width = width;
         this.touchableCanvas.height = height;
         if (this.parentElement) {
-            this.parentElement.style.height = `${height}px`;
-            this.parentElement.style.width = `${width}px`;
+            // 全屏时不覆盖父容器尺寸，CSS fullscreen class 负责铺满
+            const deviceView = this.parentElement.closest('.device-view');
+            if (!deviceView || !deviceView.classList.contains('fullscreen')) {
+                this.parentElement.style.height = `${height}px`;
+                this.parentElement.style.width = `${width}px`;
+            }
         }
         const size = new Size(width, height);
         this.emit('video-view-resize', size);
